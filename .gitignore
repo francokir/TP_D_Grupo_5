@@ -4,3 +4,4 @@ credenciales.txt
 cliente
 test_md5
 *.o
+test_autenticacion

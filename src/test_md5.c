@@ -21,13 +21,15 @@ int probar(char *mensaje, char *esperado) {
 
 int main(void) {
     int pasaron = 0;
-    int total = 5;
+    int total = 6;
 
     /* Vectores de prueba del RFC 1321 */
     pasaron += probar("", "d41d8cd98f00b204e9800998ecf8427e");
     pasaron += probar("abc", "900150983cd24fb0d6963f7d28e17f72");
     pasaron += probar("12345678901234567890123456789012345678901234567890123456789012345678901234567890",
                       "57edf4a22be3c955ac49da2e2107b67a");
+    pasaron += probar("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+                      "d174ab98d277d9f5a5611c2c9f419d9f");
 
     /* Ejemplos del enunciado del TP */
     pasaron += probar("grupo01|180.11.1.3|secreto01", "f21d11f08cf40377860fd75d8bfd73cb");

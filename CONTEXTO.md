@@ -22,8 +22,7 @@ Sirve para retomar el trabajo sin perder el hilo.
 - **Detalles de los ejemplos de clase que NO copiamos:** `recv` con `sizeof(buffer)` sin dejar
   lugar para el `'\0'`, `gai_strerror(errno)`, no chequear el retorno de `socket()`,
   `addrsize` sin inicializar, `inbytes` sin inicializar.
-- **Sin warnings** con `-Wall -Wextra` (la consigna exige `-Wall`). Por ahora quedan solo
-  avisos de "unused parameter" que desaparecen en pasos siguientes.
+- **Sin warnings** con `-Wall -Wextra` (la consigna exige `-Wall`).
 - **No conectarse al servidor de la cátedra salvo que haga falta.** Para probar se usan tests
   locales (`make test`) o respuestas armadas a mano.
 - **Cada `.c` incluye su propio `.h`**, así el compilador detecta si las firmas no coinciden.
@@ -36,8 +35,10 @@ Sirve para retomar el trabajo sin perder el hilo.
 |---|---|
 | `src/cliente.c` | `main`: solo el orden de los pasos |
 | `src/ip_publica.h` / `.c` | `consulta_ip`, `obtener_ip`, `INET4_ADDRSTRLEN` |
-| `src/md5.h` / `.c` | `md5_hex`, `MD5_HEX_LEN` (por ahora devuelve 32 ceros) |
+| `src/md5.h` / `.c` | `md5_hex`, `MD5_HEX_LEN` |
+| `src/autenticacion.h` / `.c` | Pedido firmado, envío UDP, espera y verificación de la respuesta |
 | `src/test_md5.c` | Prueba `md5_hex` con vectores del RFC 1321 y del enunciado |
+| `src/test_autenticacion.c` | Prueba `separar_campos` y `verificar_respuesta` sin red |
 | `Makefile` | `make`, `make run`, `make test`, `make clean` |
 | `credenciales.txt` | Usuario, secreto e IP del servidor. **No se commitea** (está en `.gitignore`) |
 
@@ -68,19 +69,17 @@ void md5_hex(char *mensaje, int len, char *salida);
 
 | Paso | Qué | Estado |
 |---|---|---|
-| 1 | Pedir la IP pública por TCP/HTTP (`consulta_ip`) | ✅ |
-| 2 | Acumular la respuesta y sacar la IP (`obtener_ip`) | ✅ |
-| 3a | Esqueleto de MD5 + `test_md5.c` + `make test` | ✅ (0/5 pruebas, es lo esperado) |
-| 3b | MD5: padding (`0x80`, ceros hasta 56 mod 64, largo en bits en 8 bytes LE) | ⏳ **siguiente** |
-| 3c | MD5: bloque de 64 bytes → 16 palabras de 32 bits little-endian | ⏳ |
-| 3d | MD5: 64 pasos de mezcla (4 rondas, tablas K y S del RFC) | ⏳ |
-| 3e | MD5: salida a hex → `make test` 5/5 | ⏳ |
-| 4 | Leer usuario / secreto / IP servidor desde `argv` y armar `usuario\|ip\|md5(usuario\|ip\|secreto)` | ⏳ |
-| 5 | Mandarlo por UDP al puerto 20262 (`sendto`) | ⏳ |
-| 6 | Esperar la respuesta como máximo 10 s (`select` + `recvfrom`) | ⏳ |
-| 7 | Separar `CODE\|ACTION\|TEXT\|SIGNATURE`; si es 200, verificar la firma (si no coincide, descartar en silencio); si es 400/401, informar | ⏳ |
-| 8 | Rehacer `README.md` (el actual es de una versión vieja) | ⏳ |
-| 9 | Rehacer la captura de Wireshark con el código nuevo | ⏳ |
+| 1–2 | IP pública por TCP/HTTP (`consulta_ip`, `obtener_ip`) | ✅ |
+| 3a–3e | MD5 propio (`md5_hex`) + `test_md5.c` (6/6) | ✅ |
+| 4 | Argumentos por `argv` + pedido firmado (`armar_pedido`) | ✅ |
+| 5 | Envío UDP al puerto 20262 (`enviar_pedido`, devuelve el socket) | ✅ |
+| 6 | Esperar con `select` + `recvfrom` (`esperar_respuesta`, timeout por parámetro) | ✅ |
+| 7a | `separar_campos` (strchr, no strtok) + `test_autenticacion.c` | ✅ |
+| 7b | `verificar_respuesta` (OK / ERROR / INVALIDA) | ✅ (15/15 tests) |
+| 7c | `recibir_puerto`: loop con tiempo restante (gettimeofday), chequeo de origen, descarte silencioso | ✅ probado con el servidor real (200) |
+| 8 | `README.md` | ✅ |
+| 9 | Captura de Wireshark con el código final | ⏳ |
+| 10 | Commit y push | ⏳ |
 
 Filtro de Wireshark: `ip.addr == <IP servidor> || tcp.port == 80`
 
