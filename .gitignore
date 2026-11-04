@@ -1,0 +1,6 @@
+# Credenciales del grupo: NO subir al repo
+credenciales.txt
+# Binarios
+cliente
+test_md5
+*.o
