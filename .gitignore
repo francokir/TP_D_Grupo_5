@@ -5,3 +5,6 @@ cliente
 test_md5
 *.o
 test_autenticacion
+test_pdu
+# Salidas de prueba (contienen el secreto en la linea del comando)
+salida_servidor_*.txt

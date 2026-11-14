@@ -43,4 +43,9 @@ int verificar_respuesta(char *respuesta, char *secreto, int *puerto);
    Devuelve 0 y deja el puerto en *puerto si llego un 200 valido, 1 si no. */
 int recibir_puerto(int s, char *ip_servidor, char *secreto, int *puerto);
 
+/* Manda 'mensaje' en un datagrama UDP a ip_servidor, puerto 20262, usando
+   el socket 's' que ya existe (el de la autenticacion).
+   Devuelve 0 si salio bien, 1 si hubo error. */
+int enviar_al_servidor(int s, char *ip_servidor, char *mensaje);
+
 #endif

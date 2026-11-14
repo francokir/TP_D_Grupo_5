@@ -86,8 +86,42 @@ Filtro de Wireshark: `ip.addr == <IP servidor> || tcp.port == 80`
 ### Desafío 2 (entrega final 20/11)
 
 Conectarse por TCP al puerto recibido, delimitar las PDUs por `\r\n` (pueden llegar cortadas
-o varias juntas), validarlas (códigos 200, 400, 405–410) y reenviar cada una firmada por UDP.
-Todavía no empezado.
+o varias juntas), validarlas (códigos 200, 400, 405–410) y reenviar cada una firmada por UDP
+(`usuario|PDU|código|md5(usuario|PDU|código|secreto)`, puerto 20262). No se reenvían las PDUs con `|`.
+
+| Paso | Qué | Estado |
+|---|---|---|
+| 1 | Conectarse por TCP al puerto (`conectar_tcp`) + volcar lo que llega (debug) | ✅ probado con el servidor real |
+| 2 | Framing: `acumulador` + `extraer_pdu` (sin el `\r\n`), `test_pdu.c` | ✅ |
+| 3 | `validar_pdu(pdu, len, ahora)` → código; timestamp vacío = 400, futuro = 200 | ✅ |
+| 4 | `armar_reporte` (sin `\r\n`, a confirmar en la web), descarta PDUs con `\|` | ✅ (38/38 tests) |
+| 5 | `procesar_pdus` (conexion_tcp.c) + `enviar_al_servidor` (autenticacion.c) | ✅ |
+| 6 | Probado con el servidor real: 9 reportes enviados, códigos correctos | ✅ (falta confirmar en la web/cátedra) |
+| 7 | `TP_D_captura2.pcapng` (desafíos 1 y 2) + README actualizado | ✅ |
+| 8 | PDF con las 4 preguntas | ⏳ |
+
+**Lo que manda el servidor** (siempre las mismas 11 PDUs, solo cambia el timestamp):
+
+| PDU (sin `\r\n`) | Código esperado |
+|---|---|
+| `<ts>&Primer mensaje` | 200 |
+| `<ts>&Second Message` | 200 (llega en el mismo recv que la siguiente) |
+| `<ts>&3er Hello` | 200 |
+| `<ts>&Queres un cuarto mensaje` | 200 (llega partida en 3 recv) |
+| `17x0000000&Mensaje \| invalido` | No se envía (tiene `\|`) |
+| `<ts>&Mensaje con ~ invalido` | 408 (`~` = 0x7E, fuera de rango) |
+| `<ts - 86400>&Timestamp de ayer` | 406 |
+| `123456789012&Timestamp demasiado largo` | 407 |
+| `<ts>&` | 409 |
+| `<ts>&` + 101 `A` | 410 |
+
+No aparecen: 400, 405 (solo en la PDU con `|`), timestamp vacío ni futuro, PDUs de más de 122 bytes.
+
+**Decisiones tomadas:**
+- Si la consigna es ambigua (si `<PDU>` incluye el `\r\n`, más de 122 bytes sin delimitador,
+  timestamp vacío o futuro), nos guiamos por lo que manda el servidor real.
+- Si una PDU tiene varios errores: se reporta el **primero que se encuentre**.
+- Los reportes UDP se mandan por el **mismo socket UDP** de la autenticación.
 
 ## Notas
 

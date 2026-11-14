@@ -223,3 +223,30 @@ int recibir_puerto(int s, char *ip_servidor, char *secreto, int *puerto) {
     fprintf(stderr, "Error: no hubo respuesta valida en %d segundos\n", RESPUESTA_TIMEOUT_MS / 1000);
     return 1;
 }
+
+int enviar_al_servidor(int s, char *ip_servidor, char *mensaje) {
+    struct addrinfo hints;
+    struct addrinfo *servinfo; /* es donde van los resultados */
+    int status;
+    int enviados;
+
+    memset(&hints,0,sizeof(hints));     /* es necesario inicializar con ceros */
+    hints.ai_family = AF_INET;          /* Address Family */
+    hints.ai_socktype = SOCK_DGRAM;     /* Socket Type: UDP */
+
+    // Armamos la direccion del servidor (IP + puerto 20262)
+    if ( (status = getaddrinfo(ip_servidor, SERVIDOR_PUERTO_UDP, &hints, &servinfo))!=0)
+    {
+      fprintf(stderr, "Error en getaddrinfo: %s\n",gai_strerror(status));
+      return 1;
+    }
+
+    enviados = sendto(s, mensaje, strlen(mensaje), 0, servinfo->ai_addr, servinfo->ai_addrlen);
+    freeaddrinfo(servinfo);
+    if (enviados == -1)
+    {
+      fprintf(stderr,"Error en sendto %i: %s\n",errno,strerror(errno));
+      return 1;
+    }
+    return 0;
+}

@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include "ip_publica.h"
 #include "autenticacion.h"
+#include "conexion_tcp.h"
 
 int main(int argc, char *argv[]) {
     char *usuario;
@@ -12,6 +13,8 @@ int main(int argc, char *argv[]) {
     char pedido[PEDIDO_LEN];
     int s; // socket UDP
     int puerto;
+    int s_tcp; // socket del desafío 2
+    int enviados;
 
     // Leemos los argumentos
     if (argc != 4) {
@@ -46,6 +49,23 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     printf("Autenticado. Puerto TCP asignado: %d\n", puerto);
+
+    // Desafio 2 - Paso 1: conectarnos por TCP al puerto asignado
+    s_tcp = conectar_tcp(ip_servidor, puerto);
+    if (s_tcp == -1) {
+        close(s);
+        return 1;
+    }
+    printf("Conectado por TCP a %s:%d\n", ip_servidor, puerto);
+
+    // Desafio 2 - Paso 2: recibir las PDUs, validarlas y reenviarlas por UDP
+    enviados = procesar_pdus(s_tcp, s, ip_servidor, usuario, secreto);
+    close(s_tcp);
+    if (enviados == -1) {
+        close(s);
+        return 1;
+    }
+    printf("Conexion TCP cerrada por el servidor. Reportes enviados: %d\n", enviados);
 
     close(s);
 
