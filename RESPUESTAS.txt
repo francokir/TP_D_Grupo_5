@@ -1,0 +1,51 @@
+TP D – Respuestas a las preguntas
+
+Grupo 5 – Redes y Comunicación (I310), UdeSA
+
+1. ¿Cómo podría mejorar el protocolo para permitir el reenvío de PDUs por UDP con el carácter prohibido usado para la delimitación 0x7C?
+
+El problema es que el reporte usa el | para separar los campos, así que si la PDU tiene un | adentro el receptor no tiene forma de saber dónde termina. Nosotros lo vimos con la PDU 17x0000000&Mensaje | invalido que manda el servidor: si la reenviábamos quedaba grupo05|17x0000000&Mensaje | invalido|405|firma, que tiene 5 campos en vez de 4. Por eso en armar_reporte la descartamos antes de firmarla.
+
+Se nos ocurren tres formas de arreglarlo:
+
+• Mandar el largo de la PDU antes de la PDU, por ejemplo grupo05|29|17x0000000&Mensaje | invalido|405|firma. El receptor lee el número y después toma exactamente esa cantidad de bytes, sin importar qué caracteres haya adentro. Es la que más nos convence porque no hay que tocar el contenido.
+• Byte stuffing: escapar el | dentro de la PDU (por ejemplo como \|) y a su vez escapar el carácter de escape (\\). Funciona, pero el que recibe tiene que "desescapar" antes de verificar la firma y es fácil equivocarse.
+• Codificar la PDU en hexa o base64, que solo usan caracteres que nunca son |. Es lo más simple de implementar pero el mensaje queda más largo (el doble en hexa).
+
+En cualquiera de los casos la firma se tendría que seguir calculando sobre la PDU original, para que los dos lados firmen lo mismo.
+
+2. ¿Podría cambiarse el rol de quien inicia la conexión TCP para el segundo desafío? Es decir, ¿podría el servidor iniciar la conexión TCP contra sus computadoras con el programa de Sockets? Argumente su respuesta.
+
+En la práctica no, y el motivo principal es el NAT. En las capturas se ve clarito: nuestros paquetes salen desde 192.168.1.25, que es una IP privada, pero adentro del pedido mandamos 190.225.36.143, que es la pública del router (justamente por eso hubo que preguntársela a ipify). El servidor solo conoce la IP pública. Si mandara un SYN a esa IP, le llegaría al router, y el router no sabría a qué computadora de la red pasárselo, así que lo descartaría.
+
+Con UDP sí funciona que el servidor nos conteste porque nosotros mandamos primero: al salir el datagrama, el router "anota" que desde el puerto 56872 (en la captura) le hablamos al servidor, y deja entrar la respuesta a ese mismo puerto. Por eso enviar_pedido devuelve el socket en vez de cerrarlo: si abríamos otro, la respuesta no nos llegaba. Pero para una conexión nueva que arranca el servidor no hay nada anotado.
+
+Además, para que el servidor pueda conectarse, nuestro programa tendría que hacer de servidor (bind, listen y accept, como en el ejemplo ex07 de la clase), y tendría que pasar el firewall de Windows y, en nuestro caso, también el NAT de WSL. Se podría hacer configurando port forwarding en el router o teniendo una IP pública, pero no es algo que se pueda pedir a todos los grupos. Por eso tiene sentido que el cliente sea el que inicia la conexión.
+
+3. ¿Cómo se vería afectado el funcionamiento de los distintos desafíos del TP ante la pérdida de paquetes? Justifique
+
+Depende de si el paquete que se pierde es TCP o UDP:
+
+• Consulta a ipify (TCP): no pasa nada más que una demora, porque TCP retransmite lo perdido. Nuestro loop de recv sigue esperando hasta el EOF.
+• Autenticación (UDP): UDP no retransmite. Si se pierde el pedido o la respuesta, nuestro cliente espera los 10 segundos con select, termina con "no hubo respuesta valida en 10 segundos" y hay que correrlo de nuevo. Se podría mejorar reenviando el pedido un par de veces dentro de esos 10 segundos.
+• PDUs (TCP): TCP las retransmite y las entrega en orden, así que no se pierde ninguna. Lo que sí puede cambiar es cómo llegan agrupadas (una retransmisión puede juntar segmentos), pero eso no nos afecta porque el framing no depende de cómo vengan cortados los recv: acumulamos y buscamos el \r\n. Un caso delicado es si se pierde el SYN: TCP lo reintenta después de un segundo o más, y como el puerto solo está abierto 10 segundos, una red muy mala podría hacer que no lleguemos.
+• Reportes (UDP): acá es donde más se nota. Si se pierde un reporte, el servidor nunca lo recibe y nosotros no nos enteramos, porque el servidor no contesta nada (lo comprobamos en la captura: después de los reportes no vuelve ningún datagrama). Para solucionarlo haría falta que el servidor confirme cada reporte, por ejemplo con un número de secuencia y un ACK, y que el cliente reenvíe los que no se confirmen.
+
+4. Detalle las dificultades y aprendizajes obtenidos durante el desarrollo de TP. Enumere consejos hacia futuros alumnos que encaran por primera vez la programación en BSD sockets.
+
+El TP nos resultó bastante largo, pero aprendimos un montón. Muchas cosas las teníamos claras en la teoría (que TCP es un stream, que UDP no garantiza nada, qué es un hash) pero no teníamos idea de cómo se veían en código. Algunas de las dificultades que tuvimos:
+
+• Entender que TCP no respeta los mensajes. Al principio no nos quedaba claro qué devolvía recv y pensábamos que un número mayor a 0 significaba "falta más". Cuando lo corrimos contra el servidor y vimos una PDU llegando en tres pedazos de 16, 16 y 5 bytes, y dos PDUs juntas en uno de 49, nos cayó la ficha de por qué hacía falta acumular y buscar el delimitador.
+• Los errores chiquitos de C. Pusimos el puerto como 80 en vez de "80" en getaddrinfo, usamos sizeof de un parámetro que en realidad era un puntero, y en el padding de MD5 escribimos +1 en lugar de +i. Ese último el compilador no lo detectaba y lo encontramos solo porque imprimimos los bytes y los comparamos con lo esperado.
+• El Makefile. Nos tiró missing separator porque VS Code había puesto espacios en vez de un TAB, que a la vista son iguales.
+• Implementar MD5 a mano. Un bit mal y el resultado sale completamente distinto sin ninguna pista de dónde está el error, así que hubo que ir parte por parte (padding, palabras, rondas, salida).
+• Los detalles de la consigna, como que el ~ es inválido (es 0x7E y el rango termina en 0x7D), que el descarte silencioso tiene que seguir esperando solo el tiempo que queda, o que el socket UDP tiene que ser el mismo para que llegue la respuesta.
+
+Consejos para los que vienen:
+
+1. Probar las cosas por partes, como dice la clase. Nosotros separamos todo en funciones chicas y a cada una le hicimos su prueba antes de seguir.
+2. Separar la lógica de la red. El framing, la validación y MD5 los probamos con tests que no usan la red, pasándoles datos armados a mano. Así pudimos probar casos que el servidor no manda, como el \r en un recv y el \n en el siguiente.
+3. Usar netcat para simular servidores. Con nc -l y nc -u -l probamos casi todo en local antes de ir al servidor real.
+4. Usar Wireshark. Ver los paquetes nos ayudó a entender el handshake, el NAT y por qué las PDUs llegaban cortadas.
+5. Compilar con -Wall -Wextra y no ignorar los warnings. Varios eran bugs de verdad (una variable sin inicializar que hacía leer fuera de un array, por ejemplo).
+6. Nunca suponer que un recv trae un mensaje completo, y siempre chequear lo que devuelven las funciones de sockets (-1, 0 o la cantidad de bytes).
