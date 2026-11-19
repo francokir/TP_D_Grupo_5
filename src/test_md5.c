@@ -2,7 +2,7 @@
 #include <string.h>
 #include "md5.h"
 
-/* Calcula md5(mensaje) y lo compara con el resultado esperado.
+/* calcula md5(mensaje) y lo compara con el resultado esperado.
    Devuelve 1 si coincide, 0 si no. */
 int probar(char *mensaje, char *esperado) {
     char obtenido[MD5_HEX_LEN];
@@ -23,7 +23,8 @@ int main(void) {
     int pasaron = 0;
     int total = 6;
 
-    /* Vectores de prueba del RFC 1321 */
+    /* vectores de prueba del RFC 1321, apendice A.5 ("Test suite"):
+       https://www.rfc-editor.org/rfc/rfc1321 */
     pasaron += probar("", "d41d8cd98f00b204e9800998ecf8427e");
     pasaron += probar("abc", "900150983cd24fb0d6963f7d28e17f72");
     pasaron += probar("12345678901234567890123456789012345678901234567890123456789012345678901234567890",
@@ -31,7 +32,7 @@ int main(void) {
     pasaron += probar("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
                       "d174ab98d277d9f5a5611c2c9f419d9f");
 
-    /* Ejemplos del enunciado del TP */
+    // ejemplos del enunciado del TP (paginas 1 y 2)
     pasaron += probar("grupo01|180.11.1.3|secreto01", "f21d11f08cf40377860fd75d8bfd73cb");
     pasaron += probar("200|Port|17189|secreto01", "6d720e86a353852c268b2071dffaf069");
 

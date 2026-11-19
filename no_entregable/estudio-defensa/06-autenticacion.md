@@ -87,7 +87,7 @@ tv.tv_usec = (timeout_ms % 1000) * 1000;  // microsegundos
 FD_ZERO(&rfds);                           // conjunto vacío
 FD_SET(s, &rfds);                         // agregamos nuestro socket
 retval = select(s + 1, &rfds, NULL, NULL, &tv);
-if (retval == -1) /* error */;
+if (retval == -1) return -1;              // error
 if (retval == 0)  return 1;               // timeout: no llegó nada
 ```
 
@@ -219,7 +219,7 @@ while (1) {
     resultado = verificar_respuesta(respuesta, secreto, puerto);
     if (resultado == RESPUESTA_OK)    return 0;
     if (resultado == RESPUESTA_ERROR) return 1;
-    /* RESPUESTA_INVALIDA: se ignora y se sigue esperando lo que queda */
+    // RESPUESTA_INVALIDA: se ignora y se sigue esperando lo que queda
 }
 fprintf(stderr, "Error: no hubo respuesta valida en 10 segundos\n");
 return 1;

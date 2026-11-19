@@ -2,14 +2,14 @@
 #include <string.h>
 #include "autenticacion.h"
 
-/* Separa 'mensaje' y compara con lo esperado. Si esperado_ok es 0, se espera
+/* separa 'mensaje' y compara con lo esperado. Si esperado_ok es 0, se espera
    que separar_campos falle. Devuelve 1 si la prueba paso, 0 si no. */
 int probar_separar(char *mensaje, int esperado_ok, char *c0, char *c1, char *c2, char *c3) {
     char copia[PEDIDO_LEN];
     char *campos[4];
     int resultado;
 
-    strcpy(copia, mensaje); /* separar_campos modifica el mensaje: trabajamos sobre una copia */
+    strcpy(copia, mensaje); // separar_campos modifica el mensaje: trabajamos sobre una copia
     resultado = separar_campos(copia, campos);
 
     if (!esperado_ok) {
@@ -30,7 +30,7 @@ int probar_separar(char *mensaje, int esperado_ok, char *c0, char *c1, char *c2,
     return 0;
 }
 
-/* Verifica 'respuesta' con 'secreto' y compara con lo esperado.
+/* verifica 'respuesta' con 'secreto' y compara con lo esperado.
    Si se espera RESPUESTA_OK, tambien compara el puerto. */
 int probar_verificar(char *respuesta, char *secreto, int esperado, int puerto_esperado) {
     int puerto = 0;
@@ -50,35 +50,35 @@ int main(void) {
     int pasaron = 0;
     int total = 15;
 
-    /* Mensajes validos: 4 campos */
+    // mensajes validos: 4 campos
     pasaron += probar_separar("200|Port|17189|6d720e86a353852c268b2071dffaf069", 1,
                               "200", "Port", "17189", "6d720e86a353852c268b2071dffaf069");
     pasaron += probar_separar("401|Message|Unauthorized|00000000000000000000000000000000", 1,
                               "401", "Message", "Unauthorized", "00000000000000000000000000000000");
-    pasaron += probar_separar("200||17189|abc", 1, "200", "", "17189", "abc"); /* campo vacio */
+    pasaron += probar_separar("200||17189|abc", 1, "200", "", "17189", "abc"); // campo vacio
 
-    /* Mensajes invalidos: mas o menos de 4 campos */
+    // mensajes invalidos: mas o menos de 4 campos
     pasaron += probar_separar("hola", 0, NULL, NULL, NULL, NULL);
     pasaron += probar_separar("200|Port|17189", 0, NULL, NULL, NULL, NULL);
     pasaron += probar_separar("200|Port|17189|abc|extra", 0, NULL, NULL, NULL, NULL);
     
-    /* verificar_respuesta: 200 con firma valida (ejemplo del enunciado) */
+    // verificar_respuesta: 200 con firma valida (ejemplo del enunciado)
     pasaron += probar_verificar("200|Port|17189|6d720e86a353852c268b2071dffaf069", "secreto01", RESPUESTA_OK, 17189);
 
-    /* 200 con firma invalida: hay que descartarlo */
+    // 200 con firma invalida: hay que descartarlo
     pasaron += probar_verificar("200|Port|17189|6d720e86a353852c268b2071dffaf069", "otro_secreto", RESPUESTA_INVALIDA, 0);
     pasaron += probar_verificar("200|Port|17189|00000000000000000000000000000000", "secreto01", RESPUESTA_INVALIDA, 0);
-    pasaron += probar_verificar("200|Port|17190|6d720e86a353852c268b2071dffaf069", "secreto01", RESPUESTA_INVALIDA, 0); /* puerto alterado */
+    pasaron += probar_verificar("200|Port|17190|6d720e86a353852c268b2071dffaf069", "secreto01", RESPUESTA_INVALIDA, 0); // puerto alterado
 
-    /* 200 con firma valida pero puerto invalido */
+    // 200 con firma valida pero puerto invalido
     pasaron += probar_verificar("200|Port|abc|4caea1bd333df128b882c61fa4fd5903", "secreto01", RESPUESTA_INVALIDA, 0);
     pasaron += probar_verificar("200|Port|70000|7a2b2ae6985088249e3e4549286df390", "secreto01", RESPUESTA_INVALIDA, 0);
 
-    /* Errores del servidor */
+    // errores del servidor
     pasaron += probar_verificar("400|Message|Bad format|00000000000000000000000000000000", "secreto01", RESPUESTA_ERROR, 0);
     pasaron += probar_verificar("401|Message|Unauthorized|00000000000000000000000000000000", "secreto01", RESPUESTA_ERROR, 0);
 
-    /* Cualquier otra cosa */
+    // cualquier otra cosa
     pasaron += probar_verificar("hola", "secreto01", RESPUESTA_INVALIDA, 0);
 
 

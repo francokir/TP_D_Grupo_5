@@ -8,3 +8,5 @@ test_autenticacion
 test_pdu
 # Salidas de prueba (contienen el secreto en la linea del comando)
 salida_servidor_*.txt
+# Zip de la entrega
+TP_D_Grupo5.zip

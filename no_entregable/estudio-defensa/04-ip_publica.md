@@ -31,7 +31,7 @@ Devuelve 0 si salió bien y 1 si hubo error. Paso a paso:
 
 ```c
 memset(&hints, 0, sizeof(hints));   // todo en cero: "sin preferencias" salvo lo que pongamos
-hints.ai_family = AF_INET;          // IPv4
+hints.ai_family = AF_INET;          // iPv4
 hints.ai_socktype = SOCK_STREAM;    // TCP
 status = getaddrinfo("api.ipify.org", "80", &hints, &servinfo);
 ```
@@ -50,8 +50,8 @@ status = getaddrinfo("api.ipify.org", "80", &hints, &servinfo);
 ```c
 s = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
 switch (connect(s, servinfo->ai_addr, servinfo->ai_addrlen)) {
-    case -1: /* error: mostrar errno, cerrar y salir */
-    case 0:  break;      /* conectado */
+    case -1: // error: mostrar errno, cerrar y salir
+    case 0:  break;      // conectado
 }
 freeaddrinfo(servinfo); // la lista ya no hace falta
 ```
@@ -83,10 +83,10 @@ send(s, request, strlen(request), 0);
 ```c
 memset(buffer, 0, buffer_len);
 while (1) {
-    if (total >= buffer_len - 1) { /* no entra: error */ }
+    if (total >= buffer_len - 1) return 1;   // no entra: error
     inbytes = recv(s, buffer + total, buffer_len - 1 - total, 0);
     if (inbytes == 0) break;          // EOF: el servidor cerró
-    if (inbytes == -1) { /* error */ }
+    if (inbytes == -1) return 1;      // error
     total += inbytes;                 // acumulamos
 }
 close(s);
@@ -106,14 +106,14 @@ close(s);
 No toca la red: recibe el texto de la respuesta y deja la IP en `ip`.
 
 ```c
-if (strncmp(respuesta, "HTTP/1.1 200", 12) != 0) { /* respuesta inesperada */ }
+if (strncmp(respuesta, "HTTP/1.1 200", 12) != 0) return 1;   // respuesta inesperada
 body = strstr(respuesta, "\r\n\r\n");   // fin de los headers
 body = body + 4;                        // salteamos el \r\n\r\n
 len = strspn(body, "0123456789.");      // cuántos caracteres seguidos son dígitos o puntos
-if (len == 0 || len >= INET4_ADDRSTRLEN) { /* no hay IP */ }
+if (len == 0 || len >= INET4_ADDRSTRLEN) return 1;   // no hay IP
 memcpy(ip, body, len);
 ip[len] = '\0';
-if (inet_pton(AF_INET, ip, &addr) != 1) { /* IP inválida */ }
+if (inet_pton(AF_INET, ip, &addr) != 1) return 1;   // IP inválida
 ```
 
 1. Chequea que la primera línea diga `HTTP/1.1 200`. Si no, algo salió mal.

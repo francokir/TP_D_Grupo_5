@@ -10,7 +10,7 @@ Sirve para retomar el trabajo sin perder el hilo.
 - **El código lo escribimos nosotros.** Cada parte se explica línea por línea antes de seguir.
   Hay que poder defenderlo en el oral.
 - **Mismo estilo que la clase** (`bsd_sockets_examples.tgz`, `workshop_tcp_udp.tgz`,
-  diapositivas `2025s1 - Sockets`):
+  diapositivas `2025s1 - Sockets`, todo en `no_entregable/material-clase/`):
   - Nombres de variables: `s`, `hints`, `servinfo`, `status`, `inbytes`, `buffer`.
   - `memset(&hints, 0, sizeof(hints))` + `getaddrinfo` para armar los sockets.
   - `switch (connect(...))` con `case -1` / `case 0`.
@@ -28,17 +28,46 @@ Sirve para retomar el trabajo sin perder el hilo.
 - **Cada `.c` incluye su propio `.h`**, así el compilador detecta si las firmas no coinciden.
 - **Patrón de buffers:** quien llama crea el array y la función lo llena
   (nunca devolver un puntero a una variable local).
+- **Comentarios** (desde el 19/11): los de una línea con `//` y los de varias líneas con
+  `/* */`, siempre empezando en minúscula (salvo siglas y constantes: `MD5`, `EOF`,
+  `RESPUESTA_INVALIDA`). Sin tildes, como el resto del código.
 
-## Archivos
+## Organización del repo
+
+En la **raíz** quedan solo los entregables que pide el enunciado; todo lo demás va en
+**`no_entregable/`**. Así, para entregar, alcanza con zipear la raíz sin esa carpeta
+(el comando está en `no_entregable/COMO_ENTREGAR.md`).
+
+| Raíz (se entrega) | Qué es |
+|---|---|
+| `src/`, `Makefile` | Código fuente y compilación |
+| `README.md` | Instrucciones de uso y compilación |
+| `TP_D_captura.pcapng`, `TP_D_captura2.pcapng` | Capturas (desafío 1; desafíos 1 y 2) |
+| `TP_D_Respuestas.pdf` | PDF con las respuestas a las 4 preguntas |
+| `CLAUDE.md` | **No se entrega: hay que sacarlo antes de armar el zip.** Solo hace que Claude Code cargue este archivo |
+
+| `no_entregable/` | Qué es |
+|---|---|
+| `CONTEXTO.md` | Este archivo |
+| `COMO_ENTREGAR.md` | Qué va en el zip y el comando para armarlo |
+| `RESPUESTAS.md` / `.txt` | Borrador de las respuestas (la versión final es el PDF) |
+| `informe-latex/` | Fuente LaTeX del PDF (`TP_D_Respuestas.tex` + `capturas/` con las figuras) |
+| `estudio-defensa/` | Material para la defensa oral: guion de 15 min, preguntas y explicación de cada archivo |
+| `material-clase/` | Enunciado, diapositivas de sockets y ejemplos de la cátedra |
+
+## Archivos de código
 
 | Archivo | Qué tiene |
 |---|---|
 | `src/cliente.c` | `main`: solo el orden de los pasos |
 | `src/ip_publica.h` / `.c` | `consulta_ip`, `obtener_ip`, `INET4_ADDRSTRLEN` |
 | `src/md5.h` / `.c` | `md5_hex`, `MD5_HEX_LEN` |
-| `src/autenticacion.h` / `.c` | Pedido firmado, envío UDP, espera y verificación de la respuesta |
+| `src/autenticacion.h` / `.c` | Pedido firmado, envío UDP, espera y verificación de la respuesta, `enviar_al_servidor` |
+| `src/conexion_tcp.h` / `.c` | `conectar_tcp`, `procesar_pdus` (loop del desafío 2) |
+| `src/pdu.h` / `.c` | Acumulador y `extraer_pdu` (framing), `validar_pdu`, `armar_reporte` |
 | `src/test_md5.c` | Prueba `md5_hex` con vectores del RFC 1321 y del enunciado |
 | `src/test_autenticacion.c` | Prueba `separar_campos` y `verificar_respuesta` sin red |
+| `src/test_pdu.c` | Prueba framing, validación y reportes sin red |
 | `Makefile` | `make`, `make run`, `make test`, `make clean` |
 | `credenciales.txt` | Usuario, secreto e IP del servidor. **No se commitea** (está en `.gitignore`) |
 
@@ -123,7 +152,36 @@ No aparecen: 400, 405 (solo en la PDU con `|`), timestamp vacío ni futuro, PDUs
 - Si una PDU tiene varios errores: se reporta el **primero que se encuentre**.
 - Los reportes UDP se mandan por el **mismo socket UDP** de la autenticación.
 
+## Cambios del 19/11 (Luis)
+
+- **Confirmación de la cátedra:** en la web aparecen los 10 casos en verde (PDU 5, la del `|`,
+  como N/A). Queda confirmado que el reporte va sin `\r\n`.
+- **PDF de respuestas** (`TP_D_Respuestas.pdf`, 7 páginas, hecho en LaTeX): sección 1 con la
+  ejecución de los desafíos y 5 figuras (lista de paquetes de la autenticación, framing
+  frames 16–31, Follow TCP Stream, Follow UDP Stream y la web de la cátedra); preguntas 1 a 4
+  en prosa, a partir de `RESPUESTAS.md` con más justificación (parseo por los extremos y
+  prefijo de longitud en la P1; NAT, firewall y analogía con FTP activo/pasivo en la P2;
+  reintentos del SYN y reportes sin ACK en la P3); sección final con el contenido del zip y
+  compilación y uso. La fuente está en `no_entregable/informe-latex/` (compilar con
+  `pdflatex` dos veces, o subir el `.tex` y `capturas/` a Overleaf).
+- **Reorganización:** todo lo que no se entrega pasó a `no_entregable/` (ver arriba).
+  Se agregaron `COMO_ENTREGAR.md`, una sección en el `README.md` que apunta al PDF y
+  `TP_D_Grupo5.zip` al `.gitignore`.
+- **Comentarios del código** (solo comentarios, ninguna línea de código; sigue compilando sin
+  warnings y pasan 6/6, 15/15 y 38/38):
+  - estilo unificado: `//` para una línea, `/* */` para varias;
+  - todos empiezan en minúscula (salvo siglas);
+  - link al RFC 1321 en `md5.h` y `md5.c`, y al apéndice A.5 (vectores de prueba) en
+    `test_md5.c`;
+  - errata: «Copir» → «copiar» en `md5.c`.
+- **Material para la defensa** en `no_entregable/estudio-defensa/`: guion para los 15 minutos
+  (~9 de presentación en 3 partes + ~6 de preguntas), preguntas probables con respuesta y un
+  md por cada `.c` explicando las funciones paso a paso.
+- **`CLAUDE.md`** en la raíz: importa este archivo para que Claude Code tenga el contexto.
+  **Sacarlo antes de armar el zip de la entrega.**
+
 ## Notas
 
-- El enunciado dice Checkpoint #1 el **3/11**. Confirmar la fecha con la cátedra.
+- Entrega: **20/11 23:59:59**. Defensa oral: **martes 24/11**, 15 minutos por grupo
+  con preguntas incluidas.
 - Preguntas a responder en el PDF: ver la última página del enunciado.

@@ -1,29 +1,29 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <string.h>  /* necesario para memset() */
-#include <errno.h>   /* necesario para codigos de errores */
+#include <string.h>  // necesario para memset()
+#include <errno.h>   // necesario para codigos de errores
 #include <netinet/in.h>
-#include <netdb.h>   /* necesario para getaddrinfo() */
-#include <unistd.h>  /* necesario para close() */
-#include <time.h>    /* necesario para time() */
+#include <netdb.h>   // necesario para getaddrinfo()
+#include <unistd.h>  // necesario para close()
+#include <time.h>    // necesario para time()
 #include "conexion_tcp.h"
 #include "pdu.h"
 #include "autenticacion.h"
 
 int conectar_tcp(char *ip, int puerto) {
-    int s; /*file descriptor*/
+    int s; // file descriptor
     struct addrinfo hints;
-    struct addrinfo *servinfo; /* es donde van los resultados */
+    struct addrinfo *servinfo; // es donde van los resultados
     int status;
-    char puerto_str[6];        /* "65535" + '\0' */
+    char puerto_str[6];        // "65535" + '\0'
 
     // getaddrinfo pide el puerto como texto
     snprintf(puerto_str, sizeof(puerto_str), "%d", puerto);
 
-    memset(&hints,0,sizeof(hints));     /* es necesario inicializar con ceros */
-    hints.ai_family = AF_INET;          /* Address Family */
-    hints.ai_socktype = SOCK_STREAM;    /* Socket Type: TCP */
+    memset(&hints,0,sizeof(hints));     // es necesario inicializar con ceros
+    hints.ai_family = AF_INET;          // address family
+    hints.ai_socktype = SOCK_STREAM;    // socket type: TCP
     if ( (status = getaddrinfo(ip, puerto_str, &hints, &servinfo))!=0)
     {
       fprintf(stderr, "Error en getaddrinfo: %s\n",gai_strerror(status));
@@ -54,8 +54,8 @@ int conectar_tcp(char *ip, int puerto) {
 }
 
 int procesar_pdus(int s_tcp, int s_udp, char *ip_servidor, char *usuario, char *secreto) {
-    char buffer[1024];          /* lo que trae cada recv */
-    acumulador acum;            /* bytes recibidos que todavia no formaron una PDU */
+    char buffer[1024];          // lo que trae cada recv
+    acumulador acum;            // bytes recibidos que todavia no formaron una PDU
     char pdu[ACUMULADOR_LEN];
     char reporte[REPORTE_LEN];
     int inbytes;
@@ -70,7 +70,7 @@ int procesar_pdus(int s_tcp, int s_udp, char *ip_servidor, char *usuario, char *
     while (1)
     {
       inbytes = recv(s_tcp, buffer, sizeof(buffer), 0);
-      if (inbytes == 0) /* EOF: el servidor cerro la conexion */
+      if (inbytes == 0) // EOF: el servidor cerro la conexion
         break;
       if (inbytes == -1)
       {
@@ -78,14 +78,14 @@ int procesar_pdus(int s_tcp, int s_udp, char *ip_servidor, char *usuario, char *
         return -1;
       }
 
-      // Agregamos lo recibido al acumulador
+      // agregamos lo recibido al acumulador
       if (acumulador_agregar(&acum, buffer, inbytes) != 0)
       {
         fprintf(stderr,"Error: llegaron demasiados bytes sin delimitador\n");
         return -1;
       }
 
-      // Sacamos TODAS las PDUs completas que haya (puede haber 0, 1 o varias)
+      // sacamos todas las PDUs completas que haya (puede haber 0, 1 o varias)
       while ((len = extraer_pdu(&acum, pdu)) != -1)
       {
         codigo = validar_pdu(pdu, len, (long) time(NULL));
@@ -106,7 +106,7 @@ int procesar_pdus(int s_tcp, int s_udp, char *ip_servidor, char *usuario, char *
       }
     }
 
-    // Si quedaron bytes sin delimitador al final, no forman una PDU
+    // si quedaron bytes sin delimitador al final, no forman una PDU
     if (acum.largo > 0)
       printf("Aviso: quedaron %d bytes sin delimitador al cerrar la conexion\n", acum.largo);
 

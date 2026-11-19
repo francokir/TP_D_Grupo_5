@@ -21,7 +21,7 @@ hints.ai_socktype = SOCK_STREAM;                     // TCP
 getaddrinfo(ip, puerto_str, &hints, &servinfo);
 s = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
 switch (connect(s, servinfo->ai_addr, servinfo->ai_addrlen)) {
-    case -1: /* error: mostrar errno, liberar, cerrar, devolver -1 */
+    case -1: // error: mostrar errno, liberar, cerrar, devolver -1
     case 0:  break;
 }
 freeaddrinfo(servinfo);
@@ -52,10 +52,10 @@ acumulador_iniciar(&acum);
 while (1) {
     inbytes = recv(s_tcp, buffer, sizeof(buffer), 0);
     if (inbytes == 0) break;                         // EOF: el servidor cerró
-    if (inbytes == -1) { /* error */ return -1; }
+    if (inbytes == -1) return -1;                    // error
 
     if (acumulador_agregar(&acum, buffer, inbytes) != 0) {
-        /* llegaron demasiados bytes sin delimitador */
+        // llegaron demasiados bytes sin delimitador
         return -1;
     }
 

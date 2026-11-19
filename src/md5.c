@@ -1,9 +1,14 @@
+/* implementacion de MD5 segun el RFC 1321 (R. Rivest, abril 1992):
+   https://www.rfc-editor.org/rfc/rfc1321
+   La seccion 3 describe el algoritmo (padding, largo, estado inicial y las
+   4 rondas) y la seccion A.5 trae los vectores de prueba de test_md5.c. */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include "md5.h"
 
-/* Constantes K[i] = parte entera de |sen(i+1)| * 2^32 (tabla del RFC 1321) */
+// constantes K[i] = parte entera de |sen(i+1)| * 2^32 (tabla del RFC 1321)
 static const uint32_t K[64] = {
     0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee, 0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
     0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be, 0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
@@ -15,7 +20,7 @@ static const uint32_t K[64] = {
     0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1, 0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
 };
 
-/* Cantidad de bits a rotar en cada paso (tabla del RFC 1321) */
+// cantidad de bits a rotar en cada paso (tabla del RFC 1321)
 static const int S[64] = {
     7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
     5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
@@ -23,17 +28,17 @@ static const int S[64] = {
     6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
 };
 
-/* Rota los bits de x hacia la izquierda c lugares (los que salen por
+/* rota los bits de x hacia la izquierda c lugares (los que salen por
    la izquierda entran por la derecha) */
 static uint32_t rotar_izq(uint32_t x, int c) {
     return (x << c) | (x >> (32 - c));
 }
 
 static void procesar_bloque(uint32_t *estado, uint8_t *bloque) {
-    uint32_t M[16]; // Bloque visto como 16 palabras de 32 bits
+    uint32_t M[16]; // bloque visto como 16 palabras de 32 bits
     int i;
 
-    // Armamos cada palabra con 4 bytes en little-endian
+    // armamos cada palabra con 4 bytes en little-endian
     for (i = 0; i < 16; i++) {
         M[i] = (uint32_t) bloque[i*4]
             | ((uint32_t) bloque[i*4 + 1] << 8)
@@ -48,18 +53,18 @@ static void procesar_bloque(uint32_t *estado, uint8_t *bloque) {
     uint32_t F, temp;
     int g;
 
-    /* 64 pasos en 4 rondas de 16 */
+    // 64 pasos en 4 rondas de 16
     for (i = 0; i < 64; i++) {
-        if (i < 16) {             /* ronda 1 */
+        if (i < 16) {             // ronda 1
             F = (B & C) | (~B & D);
             g = i;
-        } else if (i < 32) {      /* ronda 2 */
+        } else if (i < 32) {      // ronda 2
             F = (D & B) | (~D & C);
             g = (5*i + 1) % 16;
-        } else if (i < 48) {      /* ronda 3 */
+        } else if (i < 48) {      // ronda 3
             F = B ^ C ^ D;
             g = (3*i + 5) % 16;
-        } else {                  /* ronda 4 */
+        } else {                  // ronda 4
             F = C ^ (B | ~D);
             g = (7*i) % 16;
         }
@@ -71,7 +76,7 @@ static void procesar_bloque(uint32_t *estado, uint8_t *bloque) {
         A = temp;
     }
 
-    /* Sumamos el resultado del bloque al estado */
+    // sumamos el resultado del bloque al estado
     estado[0] += A;
     estado[1] += B;
     estado[2] += C;
@@ -79,10 +84,10 @@ static void procesar_bloque(uint32_t *estado, uint8_t *bloque) {
 }   
 
 void md5_hex(char *mensaje, int len, char *salida) {
-    uint8_t *datos = (uint8_t *) mensaje; // Castear mensaje a bytes sin signo
-    int bloques_completos = len/64; // Bloques que no necesitan padding
-    int resto = len % 64; // Bytes que si necesitan padding
-    uint8_t cola[128]; // Resto más padding (a lo sumo 2 bloques)    
+    uint8_t *datos = (uint8_t *) mensaje; // castear mensaje a bytes sin signo
+    int bloques_completos = len/64; // bloques que no necesitan padding
+    int resto = len % 64; // bytes que si necesitan padding
+    uint8_t cola[128]; // resto más padding (a lo sumo 2 bloques)    
 
     int cola_len;
     uint64_t largo_bits = (uint64_t) len * 8;
@@ -90,31 +95,31 @@ void md5_hex(char *mensaje, int len, char *salida) {
     uint8_t byte;
     int i;
     
-    // Procesamos los bloques completos directamente desde el mensaje
+    // procesamos los bloques completos directamente desde el mensaje
     for (i = 0; i < bloques_completos; i++)
         procesar_bloque(estado, datos + i*64);
 
-    // Copiamos los bytes que sobran y agregamos el bit 1 (byte 0x80)
-    memset(cola, 0, sizeof(cola)); // Limpiamos la cola
-    memcpy(cola, datos + bloques_completos * 64, resto); // Copir bytes del bloque incompleto a la cola
+    // copiamos los bytes que sobran y agregamos el bit 1 (byte 0x80)
+    memset(cola, 0, sizeof(cola)); // limpiamos la cola
+    memcpy(cola, datos + bloques_completos * 64, resto); // copiar bytes del bloque incompleto a la cola
     cola[resto] = 0x80;
 
-    // Si entran los 8 bytes del largo usamos un bloque, sino 2
+    // si entran los 8 bytes del largo usamos un bloque, sino 2
     if (resto < 56)
         cola_len = 64;
     else
         cola_len = 128;
         
-    // Ponemos el largo en bits en little endian en los últimos 8 bytes
+    // ponemos el largo en bits en little endian en los últimos 8 bytes
     for (i = 0; i < 8; i++)
         cola[cola_len - 8 + i] = (largo_bits >> (8*i)) & 0xff;
     
-    // Procesamos la cola (1 o 2 bloques)
+    // procesamos la cola (1 o 2 bloques)
     for (i = 0; i < cola_len; i += 64)
         procesar_bloque(estado, cola + i);
     
-    // Salida: el estado son 16 bytes (A, B, C, D en little-endian).
-    // Cada byte se escribe como 2 caracteres hex en minuscula.
+    /* salida: el estado son 16 bytes (A, B, C, D en little-endian).
+       Cada byte se escribe como 2 caracteres hex en minuscula. */
     for (i = 0; i < 16; i++) {
         byte = (estado[i / 4] >> (8 * (i % 4))) & 0xff;
         sprintf(salida + i*2, "%02x", byte);

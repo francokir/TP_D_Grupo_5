@@ -183,3 +183,7 @@ Filtro de Wireshark usado:
 ```
 ip.addr == 167.114.129.206 || tcp.port == 80
 ```
+
+## Respuestas a las preguntas
+
+Las respuestas a las cuatro preguntas del enunciado están en `TP_D_Respuestas.pdf`.
