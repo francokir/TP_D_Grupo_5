@@ -78,8 +78,8 @@ void md5_hex(char *mensaje, int len, char *salida);
 | 7b | `verificar_respuesta` (OK / ERROR / INVALIDA) | ✅ (15/15 tests) |
 | 7c | `recibir_puerto`: loop con tiempo restante (gettimeofday), chequeo de origen, descarte silencioso | ✅ probado con el servidor real (200) |
 | 8 | `README.md` | ✅ |
-| 9 | Captura de Wireshark con el código final | ⏳ |
-| 10 | Commit y push | ⏳ |
+| 9 | Captura de Wireshark con el código final (`TP_D_captura.pcapng`) | ✅ |
+| 10 | Commit y push | ✅ |
 
 Filtro de Wireshark: `ip.addr == <IP servidor> || tcp.port == 80`
 
@@ -94,11 +94,11 @@ o varias juntas), validarlas (códigos 200, 400, 405–410) y reenviar cada una 
 | 1 | Conectarse por TCP al puerto (`conectar_tcp`) + volcar lo que llega (debug) | ✅ probado con el servidor real |
 | 2 | Framing: `acumulador` + `extraer_pdu` (sin el `\r\n`), `test_pdu.c` | ✅ |
 | 3 | `validar_pdu(pdu, len, ahora)` → código; timestamp vacío = 400, futuro = 200 | ✅ |
-| 4 | `armar_reporte` (sin `\r\n`, a confirmar en la web), descarta PDUs con `\|` | ✅ (38/38 tests) |
+| 4 | `armar_reporte` (sin `\r\n`, confirmado en la web), descarta PDUs con `\|` | ✅ (38/38 tests) |
 | 5 | `procesar_pdus` (conexion_tcp.c) + `enviar_al_servidor` (autenticacion.c) | ✅ |
-| 6 | Probado con el servidor real: 9 reportes enviados, códigos correctos | ✅ (falta confirmar en la web/cátedra) |
+| 6 | Probado con el servidor real: 9 reportes enviados, códigos correctos | ✅ (19/11: en la web de la cátedra aparece todo en verde) |
 | 7 | `TP_D_captura2.pcapng` (desafíos 1 y 2) + README actualizado | ✅ |
-| 8 | PDF con las 4 preguntas | ⏳ |
+| 8 | PDF con las 4 preguntas (`TP_D_Respuestas.pdf`, LaTeX, a partir de `RESPUESTAS.md`) | ✅ |
 
 **Lo que manda el servidor** (siempre las mismas 11 PDUs, solo cambia el timestamp):
 
