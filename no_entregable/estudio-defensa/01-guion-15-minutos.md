@@ -4,12 +4,12 @@ Los 15 minutos **incluyen las preguntas** que nos van a hacer. Por eso apuntamos
 **~9 minutos** (3 partes de ~3 minutos) y dejar **~6 minutos para preguntas**. Si nos cortan
 antes para preguntar, mejor: cada uno sabe su parte de memoria y puede saltar a lo importante.
 
-| Parte | Quién | Tema | Tiempo | Qué tener abierto |
-|---|---|---|---|---|
-| 1 | _(a definir)_ | Visión general, IP pública y MD5 | ~3 min | `cliente.c`, `ip_publica.c`, `md5.c` |
-| 2 | _(a definir)_ | Autenticación por UDP | ~3 min | `autenticacion.c` + frames 10 y 12 |
-| 3 | _(a definir)_ | Desafío 2: framing, validación y reportes | ~3 min | `conexion_tcp.c`, `pdu.c` + frames 13–49 |
-| — | los tres | Preguntas | ~6 min | todo |
+| Parte | Quién    | Tema                                      | Tiempo | Qué tener abierto                        |
+| ----- | -------- | ----------------------------------------- | ------ | ---------------------------------------- |
+| 1     | Luis     | Visión general, IP pública y MD5          | ~3 min | `cliente.c`, `ip_publica.c`, `md5.c`     |
+| 2     | Franco   | Autenticación por UDP                     | ~3 min | `autenticacion.c` + frames 10 y 12       |
+| 3     | Alan     | Desafío 2: framing, validación y reportes | ~3 min | `conexion_tcp.c`, `pdu.c` + frames 13–49 |
+| —     | los tres | Preguntas                                 | ~6 min | todo                                     |
 
 **Antes de empezar:** el repo abierto en el editor, `TP_D_captura2.pcapng` abierta en
 Wireshark con el filtro `ip.addr == 167.114.129.206 || tcp.port == 80`, y una terminal con
